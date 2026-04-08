@@ -297,6 +297,9 @@ def run_episode(client: OpenAI, env_client: _EnvClientAdapter, task_name: str) -
 # ---------------------------------------------------------------------------
 
 def main() -> None:
+    if OpenAI is None:
+        raise RuntimeError("The 'openai' package is not installed. Please install it with 'pip install openai'.")
+
     client = OpenAI(base_url=API_BASE_URL, api_key=API_KEY)
     env_client = _EnvClientAdapter(base_url=ENV_BASE_URL)
 
