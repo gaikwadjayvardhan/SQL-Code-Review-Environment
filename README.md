@@ -1,3 +1,18 @@
+---
+title: SQL Code Review Environment
+emoji: 🔍
+colorFrom: blue
+colorTo: purple
+sdk: docker
+app_port: 7860
+pinned: false
+tags:
+  - openenv
+  - sql
+  - code-review
+  - security
+  - ai-agent
+---
 
 # SQL Code Review — OpenEnv Environment
 
@@ -22,7 +37,7 @@ SQL code review is a daily task for senior engineers, DBAs, and security teams. 
 ### Task 1: `sql-injection-easy`
 A Python login handler concatenates user input directly into a SQL string. The agent must detect the injection vector, flag the unparameterized query pattern, and note the SELECT * anti-pattern. A beginner security audit.
 
-### Task 2: `perf-review-medium`  
+### Task 2: `perf-review-medium`
 A multi-table reporting query joins 50M-row and 2M-row tables without indices, uses SELECT *, and has no LIMIT. The agent must identify the performance failure modes and suggest the right indices and query rewrites.
 
 ### Task 3: `full-review-hard`
@@ -92,7 +107,23 @@ This rewards **partial progress** — finding 2 of 7 issues yields non-zero rewa
 
 ## Setup & Usage
 
-### Local (Docker)
+### Prerequisites
+
+```bash
+pip install uv       # fast package manager (replaces pip for this project)
+```
+
+### Local Development (without Docker)
+
+```bash
+git clone <repo-url>
+cd <repo-dir>
+
+uv sync              # install all dependencies into .venv
+uv run server        # start the FastAPI server on port 7860
+```
+
+### Local Development (Docker)
 
 ```bash
 # Build and run the environment server
@@ -100,7 +131,6 @@ docker build -t sql-review-env .
 docker run -p 7860:7860 sql-review-env
 
 # In another terminal, run the inference script
-pip install openai requests
 export HF_TOKEN=hf_...
 export MODEL_NAME=Qwen/Qwen2.5-72B-Instruct
 export API_BASE_URL=https://router.huggingface.co/v1
@@ -139,12 +169,83 @@ curl -X POST http://localhost:7860/step \
 curl http://localhost:7860/state
 ```
 
-### Run tests
+### Run Tests
 
 ```bash
-pip install pytest
-PYTHONPATH=. pytest tests/ -v
+uv run pytest test_env.py -v
 ```
+
+---
+
+## Deploy to HuggingFace Spaces
+
+This repository is configured for a **Docker-based Hugging Face Space**:
+- `sdk: docker` in README frontmatter
+- `app_port: 7860` in README frontmatter
+- Docker entrypoint: `uv run server` (from `Dockerfile`)
+
+### Quick Deploy (recommended)
+
+1. Create a new Space on Hugging Face:
+  - Space SDK: `Docker`
+  - Visibility: your choice (public/private)
+
+2. Add the Space as a Git remote:
+
+```bash
+git remote add space https://huggingface.co/spaces/<your-username>/<space-name>.git
+```
+
+3. Push your branch to the Space:
+
+```bash
+git push space main
+```
+
+4. Open your Space page and check **Build logs** until deployment finishes.
+
+### Authentication
+
+If push prompts for credentials, use a Hugging Face token with **write** access:
+
+```bash
+huggingface-cli login
+```
+
+Then push again:
+
+```bash
+git push space main
+```
+
+### Update Flow
+
+For every new change:
+
+```bash
+git add .
+git commit -m "update space"
+git push origin main
+git push space main
+```
+
+### Optional: Single Push to GitHub + Space
+
+```bash
+git remote set-url --add --push origin https://github.com/<your-username>/<repo>.git
+git remote set-url --add --push origin https://huggingface.co/spaces/<your-username>/<space-name>.git
+git push origin main
+```
+
+### Verify Deployment
+
+After a successful build, your app should expose:
+- `GET /`
+- `POST /reset`
+- `POST /step`
+- `GET /state`
+
+You can verify from the Space URL by opening `/docs` (FastAPI Swagger UI).
 
 ---
 
@@ -163,17 +264,18 @@ Expected scores with `Qwen/Qwen2.5-72B-Instruct` (may vary by temperature):
 ## Project Structure
 
 ```
-openenv-sql-review/
-├── inference.py          # Main inference script (OpenEnv stdout format)
-├── openenv.yaml          # OpenEnv metadata
-├── Dockerfile            # Container build
-├── README.md
-├── server/
-│   ├── app.py            # FastAPI server (/reset, /step, /state)
-│   ├── env_core.py       # Environment logic, graders, typed models
-│   └── requirements.txt
-└── tests/
-    └── test_env.py       # 16 unit + integration tests
+.
+├── app.py              # FastAPI server (/reset, /step, /state, /tasks)
+├── env_core.py         # Environment logic, graders, typed Pydantic models
+├── inference.py        # Inference script (OpenEnv stdout log format)
+├── openenv.yaml        # OpenEnv environment metadata
+├── pyproject.toml      # Project deps & scripts (managed by uv)
+├── uv.lock             # Locked dependency tree
+├── Dockerfile          # Container build (python:3.11-slim + uv sync)
+├── test_env.py         # Unit + integration tests
+└── server/
+    ├── __init__.py
+    └── app.py          # Re-exports app; uvicorn entrypoint for `uv run server`
 ```
 
 ---
