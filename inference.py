@@ -24,13 +24,18 @@ import os
 import textwrap
 from typing import Any, Dict, List, Optional
 
-import requests
-from openai import OpenAI
+try:
+    from openai import OpenAI
+except ImportError:
+    OpenAI = None  # type: ignore[assignment,misc]
 
 # ---------------------------------------------------------------------------
 # Imports from env_core (for type hints; GenericEnvClient used for HTTP calls)
 # ---------------------------------------------------------------------------
-from env_core import SQLReviewAction, SQLReviewObservation, SQLReviewEnv  # noqa: F401
+try:
+    from env_core import SQLReviewAction, SQLReviewObservation, SQLReviewEnv  # noqa: F401
+except ImportError:
+    pass  # env_core may not be present in every execution context
 
 # ---------------------------------------------------------------------------
 # Try the real openenv GenericEnvClient; fall back to a thin requests shim
@@ -59,11 +64,13 @@ except ImportError:
             self._base = base_url.rstrip("/")
 
         def reset(self, task: str) -> Dict[str, Any]:
+            import requests  # lazy import — not available in every execution context
             r = requests.post(f"{self._base}/reset", json={"task": task}, timeout=30)
             r.raise_for_status()
             return r.json()
 
         def step(self, action: Dict[str, Any]) -> Dict[str, Any]:
+            import requests  # lazy import — not available in every execution context
             r = requests.post(f"{self._base}/step", json={"action": action}, timeout=30)
             r.raise_for_status()
             return r.json()
