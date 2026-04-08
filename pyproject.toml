@@ -10,6 +10,8 @@ dependencies = [
     "openai",
     "requests",
     "python-dotenv",
+  "pytest",
+  "pytest-asyncio",
 ]
 
 [project.scripts]
@@ -20,6 +22,12 @@ include = [
   "server/",
   "app.py",
   "env_core.py",
+]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+markers = [
+  "asyncio: mark test as asyncio-compatible",
 ]
 
 [build-system]
