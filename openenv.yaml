@@ -1,5 +1,4 @@
-api_version: "1.0"
-transport: websocket
+spec_version: 1
 
 name: sql-code-review
 version: "1.0.0"
@@ -10,6 +9,11 @@ description: >
   Covers injection attacks, missing indices, N+1 queries, cartesian products,
   hardcoded credentials, and more.
 
+type: environment
+runtime: docker
+app: app:app
+port: 7860
+
 domain: software-engineering
 tags:
   - sql
@@ -17,77 +21,3 @@ tags:
   - security
   - performance
   - real-world
-
-tasks:
-  - name: sql-injection-easy
-    description: Detect SQL injection and unparameterized query in a login handler
-    difficulty: easy
-    max_steps: 3
-    reward_range: [0.0, 1.0]
-
-  - name: perf-review-medium
-    description: Identify performance issues (missing index, SELECT *, no LIMIT) in a reporting query
-    difficulty: medium
-    max_steps: 4
-    reward_range: [0.0, 1.0]
-
-  - name: full-review-hard
-    description: >
-      Comprehensive review of a multi-table query with SQL injection, hardcoded credentials,
-      cartesian product, N+1 query pattern, and missing limits
-    difficulty: hard
-    max_steps: 5
-    reward_range: [0.0, 1.0]
-
-action_space:
-  type: structured
-  fields:
-    - name: issues_found
-      type: list[str]
-      description: Issue identifiers detected in the SQL snippet
-    - name: severity_ratings
-      type: dict[str, str]
-      description: "Severity per issue: critical | high | medium | low"
-    - name: suggested_fix
-      type: str
-      description: Corrected SQL or textual fix recommendation
-    - name: explanation
-      type: str
-      description: Brief explanation of findings
-
-observation_space:
-  type: structured
-  fields:
-    - name: sql_snippet
-      type: str
-      description: The SQL code or query under review
-    - name: context
-      type: str
-      description: Schema hints and business context
-    - name: step
-      type: int
-      description: Current step number within the episode
-    - name: feedback
-      type: str
-      description: Feedback from the previous action
-    - name: issues_remaining
-      type: int
-      description: Number of required issues not yet found (-1 on first step)
-
-reward_function: >
-  Composite score over [0, 1]:
-    - Issue detection accuracy (0–0.50): fraction of required issues correctly identified
-    - Severity accuracy (0–0.20): correct severity ratings for critical/high issues
-    - Fix quality (0–0.20): keyword coverage in suggested fix
-    - False positive penalty (-0.05 each, max -0.10)
-    - Step efficiency bonus (0–0.10): reward for finishing in fewer steps
-
-endpoints:
-  reset: POST /reset
-  step: POST /step
-  state: GET /state
-  tasks: GET /tasks
-
-server:
-  port: 7860
-  framework: fastapi
