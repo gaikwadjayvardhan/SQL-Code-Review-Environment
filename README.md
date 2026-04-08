@@ -179,6 +179,7 @@ uv run pytest test_env.py -v
 
 ## Deploy to HuggingFace Spaces
 
+<<<<<<< HEAD
 This repo is configured to run as a **Docker-based HF Space** on port 7860. The `sdk: docker` and `app_port: 7860` fields in this README's YAML frontmatter tell HF Spaces how to build and serve it automatically.
 
 ### First-time setup
@@ -219,6 +220,75 @@ git push origin main
 ```
 
 > **Note:** HF Spaces builds and redeploys automatically on every push. Monitor progress in the Space's **Logs** tab. The Space is live once you see `Uvicorn running on http://0.0.0.0:7860` in the logs.
+=======
+This repository is configured for a **Docker-based Hugging Face Space**:
+- `sdk: docker` in README frontmatter
+- `app_port: 7860` in README frontmatter
+- Docker entrypoint: `uv run server` (from `Dockerfile`)
+
+### Quick Deploy (recommended)
+
+1. Create a new Space on Hugging Face:
+  - Space SDK: `Docker`
+  - Visibility: your choice (public/private)
+
+2. Add the Space as a Git remote:
+
+```bash
+git remote add space https://huggingface.co/spaces/<your-username>/<space-name>.git
+```
+
+3. Push your branch to the Space:
+
+```bash
+git push space main
+```
+
+4. Open your Space page and check **Build logs** until deployment finishes.
+
+### Authentication
+
+If push prompts for credentials, use a Hugging Face token with **write** access:
+
+```bash
+huggingface-cli login
+```
+
+Then push again:
+
+```bash
+git push space main
+```
+
+### Update Flow
+
+For every new change:
+
+```bash
+git add .
+git commit -m "update space"
+git push origin main
+git push space main
+```
+
+### Optional: Single Push to GitHub + Space
+
+```bash
+git remote set-url --add --push origin https://github.com/<your-username>/<repo>.git
+git remote set-url --add --push origin https://huggingface.co/spaces/<your-username>/<space-name>.git
+git push origin main
+```
+
+### Verify Deployment
+
+After a successful build, your app should expose:
+- `GET /`
+- `POST /reset`
+- `POST /step`
+- `GET /state`
+
+You can verify from the Space URL by opening `/docs` (FastAPI Swagger UI).
+>>>>>>> afa80b8e6baa8d17f696d4cc51f288d1ec9bc302
 
 ---
 
