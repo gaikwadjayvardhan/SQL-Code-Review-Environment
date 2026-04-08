@@ -25,6 +25,12 @@ import textwrap
 from typing import Any, Dict, List, Optional
 
 try:
+    from dotenv import load_dotenv
+    load_dotenv()
+except ImportError:
+    pass
+
+try:
     from openai import OpenAI
 except ImportError:
     OpenAI = None  # type: ignore[assignment,misc]
